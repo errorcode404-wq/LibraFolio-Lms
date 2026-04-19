@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LibraFolio — Library Management System </title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1b2e1b;--green-mid:#2a4a2a;--green-light:#3a6b3a;
+  --amber:#c8962a;--amber-light:#e8b84b;
+  --cream:#f7f4ef;--white:#ffffff;
+  --text:#2c2c2a;--text2:#6b6b68;--text3:#9e9e9a;
+  --border:#e4e0d8;
+  --success:#2a7a4f;--danger:#c0392b;--warn:#b87328;--info:#1f6498;
+  --card:#ffffff;--hover:#f2ede6;
+  --radius:10px;--sidebar:240px;
+}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--cream);color:var(--text);display:flex;min-height:100vh;font-size:15px}
+
+/* LOGIN OVERLAY */
+#login-overlay{position:fixed;inset:0;background:var(--green);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:var(--white);border-radius:16px;width:400px;max-width:92vw;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;}
+.login-header{background:var(--green);padding:28px 32px 24px;text-align:center;}
+.login-header h1{color:var(--amber-light);font-size:24px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px}
+.login-header p{color:rgba(255,255,255,.45);font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-family:'Helvetica Neue',sans-serif}
+.login-body{padding:28px 32px 32px}
+.login-body .form-group{margin-bottom:16px}
+.login-body .form-label{display:block;font-size:12px;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.login-body .form-input{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:Georgia,serif;color:var(--text);background:var(--white);outline:none;transition:border-color .15s}
+.login-body .form-input:focus{border-color:var(--green-light)}
+.login-err{color:var(--danger);font-size:13px;font-family:'Helvetica Neue',sans-serif;display:none;margin-bottom:12px;padding:8px 12px;background:#fdf0ee;border-radius:7px;border:1px solid #f5c6c0}
+.login-btn{width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:15px;font-family:'Helvetica Neue',sans-serif;font-weight:600;cursor:pointer;transition:background .15s}
+.login-btn:hover{background:var(--green-mid)}
+.login-hint{margin-top:14px;text-align:center;font-size:12px;color:var(--text3);font-family:'Helvetica Neue',sans-serif}
+.login-hint code{background:var(--cream);padding:2px 6px;border-radius:4px;font-size:11px;color:var(--text2)}
+
+/* SIDEBAR */
+#sidebar{width:var(--sidebar);background:var(--green);min-height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100}
+.sb-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-logo h1{color:var(--amber-light);font-size:20px;font-weight:700;letter-spacing:-.3px}
+.sb-logo p{color:rgba(255,255,255,.4);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-top:3px;font-family:'Helvetica Neue',sans-serif}
+.sb-nav{padding:12px 0;flex:1}
+.sb-nav a{display:flex;align-items:center;gap:10px;padding:10px 20px;color:rgba(255,255,255,.65);text-decoration:none;font-size:14px;font-family:'Helvetica Neue',sans-serif;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.sb-nav a:hover{color:#fff;background:rgba(255,255,255,.07)}
+.sb-nav a.active{color:var(--amber-light);background:rgba(200,150,42,.12);border-left-color:var(--amber)}
+.sb-bottom{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1)}
+.sb-admin{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sb-admin-avatar{width:32px;height:32px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--green);flex-shrink:0}
+.sb-admin-name{color:rgba(255,255,255,.85);font-size:13px;font-family:'Helvetica Neue',sans-serif;font-weight:600}
+.sb-admin-role{color:rgba(255,255,255,.35);font-size:11px;font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.sb-logout{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.4);font-size:12px;font-family:'Helvetica Neue',sans-serif;cursor:pointer;background:none;border:none;padding:4px 0;transition:color .15s;margin-top:6px}
+.sb-logout:hover{color:rgba(255,255,255,.75)}
+.sb-bottom p{color:rgba(255,255,255,.3);font-size:11px;font-family:'Helvetica Neue',sans-serif;margin-top:6px}
+
+/* MAIN */
+#main{margin-left:var(--sidebar);flex:1;padding:0}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h2{font-size:19px;font-weight:700;color:var(--text)}
+.topbar-right{display:flex;gap:10px;align-items:center}
+.badge-overdue{background:#fdf0ee;color:var(--danger);font-size:12px;padding:4px 10px;border-radius:20px;font-family:'Helvetica Neue',sans-serif;font-weight:600;cursor:pointer}
+.content{padding:24px 28px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;border:none;cursor:pointer;font-size:14px;font-family:'Helvetica Neue',sans-serif;font-weight:500;transition:all .15s}
+.btn-primary{background:var(--green);color:#fff}.btn-primary:hover{background:var(--green-mid)}
+.btn-amber{background:var(--amber);color:#fff}.btn-amber:hover{background:var(--amber-light)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--hover);color:var(--text)}
+.btn-danger{background:#fdf0ee;color:var(--danger);border:1px solid #f5c6c0}.btn-danger:hover{background:#f9d8d5}
+.btn-sm{padding:5px 11px;font-size:13px}
+.btn-success{background:#edf7f2;color:var(--success);border:1px solid #b8dfc8}.btn-success:hover{background:#d4f0e2}
+.btn-pay{background:#e8f4fd;color:var(--info);border:1px solid #b8d8ef}.btn-pay:hover{background:#d0eaf9}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
+.stat-card .num{font-size:30px;font-weight:700;color:var(--text);line-height:1}
+.stat-card .lbl{font-size:12px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;margin-top:6px;text-transform:uppercase;letter-spacing:.05em}
+.stat-card .icon{font-size:22px;margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:16px;font-weight:700;color:var(--text)}
+.card-body{padding:16px 20px}
+.search-row{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.search-input{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;font-family:Georgia,serif;background:var(--white);color:var(--text);outline:none}
+.search-input:focus{border-color:var(--green-light)}
+select.filter-sel{padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:14px;font-family:Georgia,serif;background:var(--white);color:var(--text);outline:none;cursor:pointer}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-family:'Helvetica Neue',sans-serif}
+.tbl th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;border-bottom:2px solid var(--border);background:var(--cream)}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--hover)}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:12px;font-family:'Helvetica Neue',sans-serif;font-weight:600;white-space:nowrap}
+.badge-avail{background:#edf7f2;color:var(--success)}.badge-borrow{background:#fef9ec;color:var(--warn)}
+.badge-over{background:#fdf0ee;color:var(--danger)}.badge-genre{background:#eef3fb;color:var(--info)}
+.badge-ret{background:#f0f0ef;color:var(--text2)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--white);border-radius:14px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-size:18px;font-weight:700}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1}
+.modal-body{padding:20px 24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.form-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;font-family:Georgia,serif;color:var(--text);background:var(--white);outline:none}
+.form-input:focus{border-color:var(--green-light)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.act-text{font-size:14px;color:var(--text);font-family:'Helvetica Neue',sans-serif}
+.act-time{font-size:12px;color:var(--text3);font-family:'Helvetica Neue',sans-serif;margin-top:2px}
+.empty{text-align:center;padding:40px 20px;color:var(--text2);font-family:'Helvetica Neue',sans-serif}
+.fine-tag{color:var(--danger);font-weight:700}
+.page{display:none}.page.active{display:block}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:10px;font-family:'Helvetica Neue',sans-serif;font-size:14px;font-weight:500;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+.toast-ok{background:#edf7f2;color:var(--success);border:1px solid #b8dfc8}
+.toast-err{background:#fdf0ee;color:var(--danger);border:1px solid #f5c6c0}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PIE CHARTS */
+.chart-section{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.pie-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.pie-legend{width:100%;font-family:'Helvetica Neue',sans-serif}
+.pie-legend-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.pie-legend-item:last-child{border-bottom:none}
+.pie-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.pie-legend-label{flex:1;color:var(--text);font-size:12px}
+.pie-legend-val{color:var(--text2);font-size:12px;font-weight:600}
+
+/* PAYMENT MODAL */
+.payment-info{background:#e8f4fd;border:1px solid #b8d8ef;border-radius:8px;padding:16px 18px;margin-bottom:16px}
+.pay-row{display:flex;justify-content:space-between;padding:4px 0;font-family:'Helvetica Neue',sans-serif;font-size:14px}
+.pay-row .lbl{color:var(--text2)}.pay-row .val{font-weight:600;color:var(--text)}
+.pay-total{margin-top:10px;padding-top:10px;border-top:1px solid #b8d8ef;font-size:15px;font-weight:700}
+.pay-total .val{color:var(--info);font-size:18px}
+.payment-methods{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.pay-method{padding:8px 6px;border:2px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-family:'Helvetica Neue',sans-serif;font-size:12px;font-weight:600;color:var(--text2);transition:all .15s;background:var(--white)}
+.pay-method:hover,.pay-method.selected{border-color:var(--info);color:var(--info);background:#e8f4fd}
+.pay-method .pm-icon{font-size:18px;display:block;margin-bottom:3px}
+.receipt-box{background:#edf7f2;border:1px solid #b8dfc8;border-radius:8px;padding:14px 16px;display:none}
+.receipt-box.show{display:block}
+.receipt-title{font-weight:700;color:var(--success);font-family:'Helvetica Neue',sans-serif;font-size:14px;margin-bottom:6px}
+.receipt-details{font-size:13px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;line-height:1.8}
+
+/* OVERDUE BANNER */
+.overdue-banner{background:#fdf0ee;border:1px solid #f5c6c0;border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.overdue-banner .ob-icon{font-size:20px}
+.overdue-banner .ob-text{flex:1;font-family:'Helvetica Neue',sans-serif;font-size:14px;color:var(--danger)}
+
+@media(max-width:680px){
+  #sidebar{width:56px}.sb-logo,.sb-nav a span,.sb-bottom{display:none}
+  .sb-nav a{padding:14px;justify-content:center}
+  #main{margin-left:56px}.content{padding:16px}.topbar{padding:12px 16px}
+  .chart-section{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-header">
+      <h1>&#128218; LibraFolio</h1>
+      <p>Admin Portal — Sign In to Continue</p>
+    </div>
+    <div class="login-body">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="login-user" type="text" placeholder="Enter username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="login-pass" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')attemptLogin()">
+      </div>
+      <div class="login-err" id="login-err">&#9888; Invalid username or password.</div>
+      <button class="login-btn" onclick="attemptLogin()">Sign In</button>
+      <p class="login-hint">Demo credentials: <code>admin</code> / <code>libra@2024</code></p>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-logo">
+    <h1>&#128218; LibraFolio</h1>
+    <p>Management System</p>
+  </div>
+  <div class="sb-nav">
+    <a class="active" onclick="nav('dashboard',this)">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM2.5 8a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0z"/><path d="M7.5 5.5a.5.5 0 0 1 1 0v2.793l1.354 1.353a.5.5 0 0 1-.708.708L7.5 8.707V5.5z"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a onclick="nav('books',this)">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+      <span>Books</span>
+    </a>
+    <a onclick="nav('members',this)">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
+      <span>Members</span>
+    </a>
+    <a onclick="nav('transactions',this)">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v2A1.5 1.5 0 0 1 14.5 7h-13A1.5 1.5 0 0 1 0 5.5v-2zM1.5 3a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5h-13zM0 10.5A1.5 1.5 0 0 1 1.5 9h13a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-2z"/></svg>
+      <span>Transactions</span>
+    </a>
+    <a onclick="nav('payments',this)">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/><path d="M2 10h2v1H2v-1zm3 0h2v1H5v-1zm3 0h2v1H8v-1z"/></svg>
+      <span>Fine Payments</span>
+    </a>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-admin">
+      <div class="sb-admin-avatar">A</div>
+      <div>
+        <div class="sb-admin-name">Administrator</div>
+        <div class="sb-admin-role">Library Admin</div>
+      </div>
+    </div>
+    <button class="sb-logout" onclick="logout()">
+      <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+      Sign Out
+    </button>
+    <p>LibraFolio v1.0 · Node + SQLite   Made with Care  By Dev_Koala</p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="topbar-right">
+      <span class="badge-overdue" id="overdue-badge" onclick="nav('payments',document.querySelectorAll('.sb-nav a')[4])" style="display:none"></span>
+      <span style="font-size:13px;color:var(--text2);font-family:'Helvetica Neue',sans-serif" id="date-str"></span>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid" id="stats-grid"><div class="stat-card" style="opacity:.4"><div class="icon">&#8987;</div><div class="num">...</div><div class="lbl">Loading</div></div></div>
+
+      <!-- PIE CHARTS -->
+      <div class="chart-section">
+        <div class="card">
+          <div class="card-header"><h3>&#128218; Books by Genre</h3><span style="font-size:12px;color:var(--text3);font-family:'Helvetica Neue',sans-serif">Currently Borrowed</span></div>
+          <div class="card-body">
+            <div class="pie-wrap">
+              <canvas id="pie-genre" width="200" height="200"></canvas>
+              <div class="pie-legend" id="pie-genre-legend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>&#128100; Books Allotted to Members</h3><span style="font-size:12px;color:var(--text3);font-family:'Helvetica Neue',sans-serif">Active Allocations</span></div>
+          <div class="card-body">
+            <div class="pie-wrap">
+              <canvas id="pie-members" width="200" height="200"></canvas>
+              <div class="pie-legend" id="pie-members-legend"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card"><div class="card-header"><h3>Recent Activity</h3></div><div class="card-body" id="activity-list"></div></div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Overdue Books</h3>
+            <button class="btn btn-sm btn-pay" onclick="nav('payments',document.querySelectorAll('.sb-nav a')[4])">Collect Fines &#8594;</button>
+          </div>
+          <div class="card-body" id="overdue-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOKS -->
+    <div class="page" id="page-books">
+      <div class="search-row">
+        <input class="search-input" placeholder="Search title, author, ISBN…" id="book-search" oninput="debounce(renderBooks,400)()">
+        <select class="filter-sel" id="book-genre" onchange="renderBooks()">
+          <option value="">All Genres</option>
+          <option>Fiction</option><option>Non-Fiction</option><option>Science</option>
+          <option>History</option><option>Biography</option><option>Technology</option><option>Philosophy</option>
+        </select>
+        <select class="filter-sel" id="book-status" onchange="renderBooks()">
+          <option value="">All Status</option><option>Available</option><option>Borrowed</option>
+        </select>
+        <button class="btn btn-primary" onclick="openModal('modal-add-book')">+ Add Book</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Book Catalog</h3><span id="book-count" style="font-size:13px;color:var(--text2);font-family:'Helvetica Neue',sans-serif"></span></div>
+        <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>#</th><th>Title &amp; Author</th><th>ISBN</th><th>Genre</th><th>Copies</th><th>Status</th><th>Actions</th></tr></thead><tbody id="books-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div class="page" id="page-members">
+      <div class="search-row">
+        <input class="search-input" placeholder="Search name, email, ID…" id="member-search" oninput="debounce(renderMembers,400)()">
+        <button class="btn btn-primary" onclick="openModal('modal-add-member')">+ Add Member</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Member Directory</h3><span id="member-count" style="font-size:13px;color:var(--text2);font-family:'Helvetica Neue',sans-serif"></span></div>
+        <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Books Out</th><th>Fines (&#8377;)</th><th>Actions</th></tr></thead><tbody id="members-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="page" id="page-transactions">
+      <div class="search-row">
+        <input class="search-input" placeholder="Search member, book, ID…" id="txn-search" oninput="debounce(renderTransactions,400)()">
+        <select class="filter-sel" id="txn-status" onchange="renderTransactions()">
+          <option value="">All</option><option>Borrowed</option><option>Returned</option><option>Overdue</option>
+        </select>
+        <button class="btn btn-amber" onclick="openModal('modal-borrow')">+ Borrow Book</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Transaction Log</h3><span id="txn-count" style="font-size:13px;color:var(--text2);font-family:'Helvetica Neue',sans-serif"></span></div>
+        <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>ID</th><th>Member</th><th>Book</th><th>Borrowed</th><th>Due</th><th>Returned</th><th>Fine (&#8377;)</th><th>Status</th><th>Action</th></tr></thead><tbody id="txn-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- FINE PAYMENTS -->
+    <div class="page" id="page-payments">
+      <div id="overdue-payment-banner"></div>
+      <div class="card">
+        <div class="card-header">
+          <h3>&#128179; Fine Collections — Overdue Members</h3>
+          <span id="payment-count" style="font-size:13px;color:var(--text2);font-family:'Helvetica Neue',sans-serif"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>Member</th><th>Book</th><th>Due Date</th><th>Days Overdue</th><th>Fine (&#8377;)</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="payment-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>&#10003; Recent Fine Collections</h3></div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>Member</th><th>Book</th><th>Returned On</th><th>Fine Paid (&#8377;)</th><th>Status</th></tr></thead>
+            <tbody id="paid-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-add-book">
+  <div class="modal">
+    <div class="modal-head"><h3>Add New Book</h3><button class="modal-close" onclick="closeModal('modal-add-book')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="b-title" placeholder="Book title"></div>
+        <div class="form-group"><label class="form-label">Author *</label><input class="form-input" id="b-author" placeholder="Author name"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ISBN</label><input class="form-input" id="b-isbn" placeholder="978-…"></div>
+        <div class="form-group"><label class="form-label">Genre</label>
+          <select class="form-input" id="b-genre"><option>Fiction</option><option>Non-Fiction</option><option>Science</option><option>History</option><option>Biography</option><option>Technology</option><option>Philosophy</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Copies</label><input class="form-input" id="b-copies" type="number" value="1" min="1"></div>
+        <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="b-year" type="number" placeholder="2024"></div>
+      </div>
+      <div id="add-book-err" style="color:var(--danger);font-size:13px;font-family:'Helvetica Neue',sans-serif;display:none;margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-book')">Cancel</button>
+      <button class="btn btn-primary" id="btn-add-book" onclick="addBook()">Add Book</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-add-member">
+  <div class="modal">
+    <div class="modal-head"><h3>Register New Member</h3><button class="modal-close" onclick="closeModal('modal-add-member')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="m-name" placeholder="Full name"></div>
+        <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="m-email" placeholder="email@example.com"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="m-phone" placeholder="+91 XXXXX XXXXX"></div>
+        <div class="form-group"><label class="form-label">Type</label>
+          <select class="form-input" id="m-type"><option>Student</option><option>Faculty</option><option>Public</option><option>Staff</option></select>
+        </div>
+      </div>
+      <div id="add-member-err" style="color:var(--danger);font-size:13px;font-family:'Helvetica Neue',sans-serif;display:none;margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-member')">Cancel</button>
+      <button class="btn btn-primary" id="btn-add-member" onclick="addMember()">Register</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-borrow">
+  <div class="modal">
+    <div class="modal-head"><h3>Borrow a Book</h3><button class="modal-close" onclick="closeModal('modal-borrow')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Member *</label><select class="form-input" id="bw-member"></select></div>
+      <div class="form-group"><label class="form-label">Book *</label><select class="form-input" id="bw-book"></select></div>
+      <div class="form-group"><label class="form-label">Loan Period</label>
+        <select class="form-input" id="bw-days"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="21">21 days</option><option value="30">30 days</option></select>
+      </div>
+      <div id="borrow-err" style="color:var(--danger);font-size:13px;font-family:'Helvetica Neue',sans-serif;display:none;margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-borrow')">Cancel</button>
+      <button class="btn btn-amber" id="btn-borrow" onclick="borrowBook()">Issue Book</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-member-detail">
+  <div class="modal">
+    <div class="modal-head"><h3 id="mdet-name">Member Details</h3><button class="modal-close" onclick="closeModal('modal-member-detail')">&times;</button></div>
+    <div class="modal-body" id="mdet-body"></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-member-detail')">Close</button></div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-bg" id="modal-payment">
+  <div class="modal" style="width:520px">
+    <div class="modal-head">
+      <h3>&#128179; Collect Fine Payment</h3>
+      <button class="modal-close" onclick="closeModal('modal-payment')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="payment-info">
+        <div class="pay-row"><span class="lbl">Member</span><span class="val" id="pay-member-name">—</span></div>
+        <div class="pay-row"><span class="lbl">Member ID</span><span class="val" id="pay-member-id">—</span></div>
+        <div class="pay-row"><span class="lbl">Book</span><span class="val" id="pay-book-title">—</span></div>
+        <div class="pay-row"><span class="lbl">Due Date</span><span class="val" id="pay-due-date">—</span></div>
+        <div class="pay-row"><span class="lbl">Days Overdue</span><span class="val" id="pay-days-over" style="color:var(--danger)">—</span></div>
+        <div class="pay-row pay-total"><span class="lbl">Fine Amount</span><span class="val" id="pay-fine-amount">&#8377;0.00</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Method</label>
+        <div class="payment-methods">
+          <div class="pay-method selected" id="pm-cash" onclick="selectPayMethod('cash')">
+            <span class="pm-icon">&#128181;</span>Cash
+          </div>
+          <div class="pay-method" id="pm-upi" onclick="selectPayMethod('upi')">
+            <span class="pm-icon">&#128241;</span>UPI
+          </div>
+          <div class="pay-method" id="pm-card" onclick="selectPayMethod('card')">
+            <span class="pm-icon">&#128179;</span>Card
+          </div>
+        </div>
+      </div>
+      <div id="upi-field" style="display:none" class="form-group">
+        <label class="form-label">UPI Transaction ID</label>
+        <input class="form-input" id="upi-txn-id" placeholder="Enter UPI Ref No. / UTR">
+      </div>
+      <div class="receipt-box" id="receipt-box">
+        <div class="receipt-title">&#10003; Payment Received Successfully!</div>
+        <div class="receipt-details" id="receipt-details"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="pay-cancel-btn" onclick="closeModal('modal-payment')">Cancel</button>
+      <button class="btn btn-primary" id="btn-collect-payment" onclick="collectPayment()">&#8377; Collect &amp; Return Book</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+const ADMIN_CREDS = { username: 'admin', password: 'libra@2024' };
+let selectedPayMethod = 'cash';
+let currentPayTxn = null;
+
+// ─── LOGIN ────────────────────────────────────────────────
+function attemptLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  if (u === ADMIN_CREDS.username && p === ADMIN_CREDS.password) {
+    document.getElementById('login-overlay').style.display = 'none';
+    renderDashboard();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('login-pass').value = '';
+  }
+}
+function logout() {
+  if (!confirm('Sign out of LibraFolio?')) return;
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').style.display = 'none';
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+// ─── UTILS ───────────────────────────────────────────────
+function fmtDate(d){if(!d||d==='—')return'—';const dt=new Date(d);return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function inr(v){return'\u20B9'+Number(v).toFixed(2);}
+function daysOver(dueDate){return Math.max(0,Math.floor((new Date()-new Date(dueDate))/(864e5)));}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(ok?'toast-ok':'toast-err')+' show';setTimeout(()=>t.classList.remove('show'),2800);}
+function setLoading(btnId,loading){const b=document.getElementById(btnId);if(!b)return;b.disabled=loading;b.innerHTML=loading?'<span class="spinner"></span> Loading\u2026':b.dataset.label||b.textContent;}
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+async function api(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  const json=await r.json();
+  if(!json.success)throw new Error(json.error||'Request failed');
+  return json;
+}
+
+// ─── NAV ─────────────────────────────────────────────────
+function nav(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.sb-nav a').forEach(a=>a.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard',books:'Book Catalog',members:'Member Directory',transactions:'Transactions',payments:'Fine Payments'};
+  document.getElementById('page-title').textContent=titles[page];
+  if(page==='dashboard')renderDashboard();
+  if(page==='books')renderBooks();
+  if(page==='members')renderMembers();
+  if(page==='transactions')renderTransactions();
+  if(page==='payments')renderPayments();
+}
+function openModal(id){if(id==='modal-borrow')populateBorrowSelects();document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+document.getElementById('date-str').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'long',day:'numeric'});
+
+// ─── PIE CHART ────────────────────────────────────────────
+const PIE_COLORS=['#1b6ca8','#c8962a','#2a7a4f','#c0392b','#7b5ea7','#d35400','#1a7a7a','#a0522d','#5b8c5a','#8b6914'];
+function drawPie(canvasId,legendId,data){
+  const canvas=document.getElementById(canvasId);
+  const legend=document.getElementById(legendId);
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=Math.min(W,H)/2-10;
+  ctx.clearRect(0,0,W,H);
+  const total=data.reduce((s,d)=>s+d.value,0);
+  if(!total){
+    ctx.fillStyle='#e4e0d8';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#9e9e9a';ctx.font='12px Helvetica Neue';ctx.textAlign='center';ctx.fillText('No data',cx,cy+4);
+    if(legend)legend.innerHTML='<div style="text-align:center;padding:8px;font-size:12px;color:var(--text3);font-family:\'Helvetica Neue\',sans-serif">No active allocations</div>';
+    return;
+  }
+  let angle=-Math.PI/2;
+  data.forEach((d,i)=>{
+    const slice=(d.value/total)*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.closePath();
+    ctx.fillStyle=PIE_COLORS[i%PIE_COLORS.length];ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    angle+=slice;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,r*0.44,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+  ctx.fillStyle='#2c2c2a';ctx.font='bold 16px Georgia';ctx.textAlign='center';ctx.fillText(total,cx,cy+3);
+  ctx.fillStyle='#9e9e9a';ctx.font='10px Helvetica Neue';ctx.fillText('TOTAL',cx,cy+16);
+  if(legend){
+    legend.innerHTML=data.map((d,i)=>`
+      <div class="pie-legend-item">
+        <div class="pie-dot" style="background:${PIE_COLORS[i%PIE_COLORS.length]}"></div>
+        <span class="pie-legend-label">${d.label}</span>
+        <span class="pie-legend-val">${d.value} (${Math.round(d.value/total*100)}%)</span>
+      </div>`).join('');
+  }
+}
+
+async function renderPieCharts(){
+  try{
+    const {data:books}=await api('GET','/api/books');
+    // Genre pie: books currently borrowed per genre
+    const genreMap={};
+    books.forEach(b=>{const borrowed=b.copies-b.available;if(borrowed>0)genreMap[b.genre]=(genreMap[b.genre]||0)+borrowed;});
+    let genreData=Object.entries(genreMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({label:k,value:v}));
+    if(!genreData.length){books.forEach(b=>{genreMap[b.genre]=(genreMap[b.genre]||0)+b.copies;});genreData=Object.entries(genreMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({label:k,value:v}));}
+    drawPie('pie-genre','pie-genre-legend',genreData);
+
+    // Member allocation pie: active borrowed/overdue per member
+    const {data:txns}=await api('GET','/api/transactions');
+    const memberMap={};
+    txns.filter(t=>!t.return_date).forEach(t=>{memberMap[t.member_name]=(memberMap[t.member_name]||0)+1;});
+    const memberData=Object.entries(memberMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({label:k,value:v}));
+    drawPie('pie-members','pie-members-legend',memberData);
+  }catch(e){console.warn('Pie chart error:',e);}
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────
+async function renderDashboard(){
+  try{
+    const {data:s}=await api('GET','/api/transactions/stats');
+    const badge=document.getElementById('overdue-badge');
+    if(s.overdue>0){badge.style.display='inline-flex';badge.textContent=s.overdue+' overdue';}else badge.style.display='none';
+    document.getElementById('stats-grid').innerHTML=`
+      <div class="stat-card"><div class="icon">&#128218;</div><div class="num">${s.totalBooks}</div><div class="lbl">Total Copies</div></div>
+      <div class="stat-card"><div class="icon">&#128101;</div><div class="num">${s.totalMembers}</div><div class="lbl">Members</div></div>
+      <div class="stat-card"><div class="icon">&#128214;</div><div class="num">${s.borrowed}</div><div class="lbl">Books Out</div></div>
+      <div class="stat-card"><div class="icon">&#9888;&#65039;</div><div class="num" style="color:var(--danger)">${s.overdue}</div><div class="lbl">Overdue</div></div>
+      <div class="stat-card"><div class="icon">&#8377;</div><div class="num" style="color:var(--warn)">${inr(s.pendingFines)}</div><div class="lbl">Pending Fines</div></div>
+      <div class="stat-card"><div class="icon">&#127991;&#65039;</div><div class="num">${s.available}</div><div class="lbl">Available Now</div></div>
+    `;
+    document.getElementById('activity-list').innerHTML=s.recent.length?s.recent.map(t=>{
+      const isRet=!!t.return_date;const color=isRet?'#2a7a4f':t.status==='Overdue'?'#c0392b':'#c8962a';
+      return`<div class="activity-item"><div class="act-dot" style="background:${color}"></div><div><div class="act-text">${t.member_name} ${isRet?'returned':'borrowed'} <strong>${t.book_title}</strong></div><div class="act-time">${fmtDate(isRet?t.return_date:t.borrow_date)}</div></div></div>`;
+    }).join(''):`<div class="empty"><p>No activity yet.</p></div>`;
+    document.getElementById('overdue-list').innerHTML=s.overdueList.length?s.overdueList.map(t=>`
+      <div class="activity-item"><div class="act-dot" style="background:var(--danger)"></div><div>
+        <div class="act-text"><strong>${t.book_title}</strong> &mdash; ${t.member_name}</div>
+        <div class="act-time">Due ${fmtDate(t.due_date)} &bull; <span class="fine-tag">${inr(t.fine)} fine</span></div>
+      </div></div>`).join(''):`<div class="empty"><p>No overdue books &#127881;</p></div>`;
+  }catch(e){toast('Failed to load dashboard: '+e.message,false);}
+  renderPieCharts();
+}
+
+// ─── BOOKS ───────────────────────────────────────────────
+async function renderBooks(){
+  const q=document.getElementById('book-search').value;
+  const genre=document.getElementById('book-genre').value;
+  const status=document.getElementById('book-status').value;
+  const params=new URLSearchParams();
+  if(q)params.set('q',q);if(genre)params.set('genre',genre);if(status)params.set('status',status);
+  try{
+    const {data:books,total}=await api('GET','/api/books?'+params);
+    document.getElementById('book-count').textContent=total+' books';
+    document.getElementById('books-tbody').innerHTML=books.length?books.map((b,i)=>{
+      const avail=b.available;
+      const badge=avail===0?`<span class="badge badge-borrow">All Borrowed</span>`:avail<b.copies?`<span class="badge badge-borrow">${avail}/${b.copies} left</span>`:`<span class="badge badge-avail">Available</span>`;
+      return`<tr>
+        <td style="color:var(--text3);font-size:13px">${i+1}</td>
+        <td><strong style="font-size:14px">${b.title}</strong><br><span style="font-size:12px;color:var(--text2);font-family:'Helvetica Neue',sans-serif">${b.author}${b.year?' ('+b.year+')':''}</span></td>
+        <td style="font-size:12px;color:var(--text2);font-family:monospace">${b.isbn||'—'}</td>
+        <td><span class="badge badge-genre">${b.genre}</span></td>
+        <td style="text-align:center">${b.copies}</td>
+        <td>${badge}</td>
+        <td>${avail>0?`<button class="btn btn-amber btn-sm" onclick="quickBorrow(${b.id})">Borrow</button>`:`<button class="btn btn-ghost btn-sm" disabled>Borrow</button>`}
+          <button class="btn btn-danger btn-sm" onclick="deleteBook(${b.id},'${b.title.replace(/'/g,"\\'")}')" style="margin-left:4px">Remove</button>
+        </td></tr>`;
+    }).join(''):`<tr><td colspan="7"><div class="empty"><p>No books found.</p></div></td></tr>`;
+  }catch(e){toast('Error loading books: '+e.message,false);}
+}
+
+async function addBook(){
+  const t=document.getElementById('b-title').value.trim();
+  const a=document.getElementById('b-author').value.trim();
+  const err=document.getElementById('add-book-err');
+  if(!t||!a){err.style.display='block';err.textContent='Title and author are required.';return;}
+  err.style.display='none';setLoading('btn-add-book',true);
+  try{
+    await api('POST','/api/books',{title:t,author:a,isbn:document.getElementById('b-isbn').value.trim(),genre:document.getElementById('b-genre').value,copies:document.getElementById('b-copies').value,year:document.getElementById('b-year').value});
+    closeModal('modal-add-book');['b-title','b-author','b-isbn','b-year'].forEach(x=>document.getElementById(x).value='');document.getElementById('b-copies').value='1';
+    toast('Book added successfully!');renderBooks();renderDashboard();
+  }catch(e){err.style.display='block';err.textContent=e.message;}
+  setLoading('btn-add-book',false);
+}
+function quickBorrow(bookId){populateBorrowSelects(bookId);openModal('modal-borrow');}
+async function deleteBook(id,title){
+  if(!confirm(`Remove "${title}" from catalog?`))return;
+  try{await api('DELETE','/api/books/'+id);toast('Book removed.');renderBooks();renderDashboard();}catch(e){toast(e.message,false);}
+}
+
+// ─── MEMBERS ─────────────────────────────────────────────
+async function renderMembers(){
+  const q=document.getElementById('member-search').value;
+  const params=new URLSearchParams();if(q)params.set('q',q);
+  try{
+    const {data:members,total}=await api('GET','/api/members?'+params);
+    document.getElementById('member-count').textContent=total+' members';
+    document.getElementById('members-tbody').innerHTML=members.length?members.map(m=>`<tr>
+      <td style="font-family:monospace;font-size:13px;color:var(--info)">${m.id}</td>
+      <td><strong>${m.name}</strong><br><span style="font-size:12px;color:var(--text2);font-family:'Helvetica Neue',sans-serif">${m.type}</span></td>
+      <td style="font-size:13px;font-family:'Helvetica Neue',sans-serif">${m.email}</td>
+      <td style="font-size:13px;font-family:'Helvetica Neue',sans-serif">${m.phone||'—'}</td>
+      <td style="text-align:center"><span class="${m.active_loans>0?'badge badge-borrow':'badge badge-ret'}">${m.active_loans}</span></td>
+      <td><span class="${m.total_fines>0?'fine-tag':''}">${m.total_fines>0?inr(m.total_fines):'—'}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="showMemberDetail('${m.id}')">View</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}','${m.name.replace(/'/g,"\\'")}')">Remove</button>
+      </td></tr>`).join(''):`<tr><td colspan="7"><div class="empty"><p>No members found.</p></div></td></tr>`;
+  }catch(e){toast('Error loading members: '+e.message,false);}
+}
+
+async function addMember(){
+  const n=document.getElementById('m-name').value.trim();
+  const e=document.getElementById('m-email').value.trim();
+  const err=document.getElementById('add-member-err');
+  if(!n||!e){err.style.display='block';err.textContent='Name and email are required.';return;}
+  err.style.display='none';setLoading('btn-add-member',true);
+  try{
+    await api('POST','/api/members',{name:n,email:e,phone:document.getElementById('m-phone').value.trim(),type:document.getElementById('m-type').value});
+    closeModal('modal-add-member');['m-name','m-email','m-phone'].forEach(x=>document.getElementById(x).value='');
+    toast('Member registered!');renderMembers();renderDashboard();
+  }catch(e2){err.style.display='block';err.textContent=e2.message;}
+  setLoading('btn-add-member',false);
+}
+async function deleteMember(id,name){
+  if(!confirm(`Remove member "${name}"?`))return;
+  try{await api('DELETE','/api/members/'+id);toast('Member removed.');renderMembers();renderDashboard();}catch(e){toast(e.message,false);}
+}
+async function showMemberDetail(id){
+  try{
+    const {data:m}=await api('GET','/api/members/'+id);
+    document.getElementById('mdet-name').textContent=m.name;
+    document.getElementById('mdet-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div><div style="font-size:11px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Member ID</div><div style="font-family:monospace;color:var(--info)">${m.id}</div></div>
+        <div><div style="font-size:11px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Type</div>${m.type}</div>
+        <div><div style="font-size:11px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Email</div><div style="font-size:14px">${m.email}</div></div>
+        <div><div style="font-size:11px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Phone</div><div style="font-size:14px">${m.phone||'—'}</div></div>
+        <div><div style="font-size:11px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Member Since</div><div style="font-size:14px">${fmtDate(m.joined)}</div></div>
+        <div><div style="font-size:11px;color:var(--text2);font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Total Fines</div><div class="${m.total_fines>0?'fine-tag':''}" style="font-size:14px">${inr(m.total_fines||0)}</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;font-family:'Helvetica Neue',sans-serif">Currently Borrowed (${m.loans.length})</div>
+      ${m.loans.length?m.loans.map(l=>{const over=new Date(l.due_date)<new Date()&&!l.return_date;const fine=over?Math.floor((new Date()-new Date(l.due_date))/(864e5))*0.5:0;
+        return`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;font-family:'Helvetica Neue',sans-serif"><span>${l.title}</span><span class="${over?'fine-tag':''}">${over?'Overdue \u2013 '+inr(fine):'Due '+fmtDate(l.due_date)}</span></div>`;
+      }).join(''):'<p style="font-size:14px;color:var(--text2);font-family:\'Helvetica Neue\',sans-serif">No active loans.</p>'}
+    `;
+    openModal('modal-member-detail');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+// ─── TRANSACTIONS ─────────────────────────────────────────
+async function renderTransactions(){
+  const q=document.getElementById('txn-search').value;
+  const status=document.getElementById('txn-status').value;
+  const params=new URLSearchParams();if(q)params.set('q',q);if(status)params.set('status',status);
+  try{
+    const {data:txns,total}=await api('GET','/api/transactions?'+params);
+    document.getElementById('txn-count').textContent=total+' transactions';
+    document.getElementById('txn-tbody').innerHTML=txns.length?txns.map(t=>{
+      const statusBadge=t.status==='Overdue'?`<span class="badge badge-over">Overdue</span>`:t.status==='Returned'?`<span class="badge badge-ret">Returned</span>`:`<span class="badge badge-borrow">Borrowed</span>`;
+      const calcFine=t.status==='Overdue'?daysOver(t.due_date)*0.5:(t.fine||0);
+      return`<tr>
+        <td style="font-family:monospace;font-size:12px;color:var(--text2)">${t.id}</td>
+        <td style="font-size:13px;font-family:'Helvetica Neue',sans-serif">${t.member_name}<br><span style="color:var(--text3);font-size:11px">${t.member_display_id}</span></td>
+        <td style="font-size:13px;font-family:'Helvetica Neue',sans-serif">${t.book_title}<br><span style="color:var(--text3);font-size:11px;font-family:monospace">${t.book_isbn||''}</span></td>
+        <td style="font-size:13px">${fmtDate(t.borrow_date)}</td>
+        <td style="font-size:13px;color:${t.status==='Overdue'?'var(--danger)':'inherit'}">${fmtDate(t.due_date)}</td>
+        <td style="font-size:13px">${t.return_date?fmtDate(t.return_date):'—'}</td>
+        <td><span class="${calcFine>0?'fine-tag':''}" style="font-size:13px">${calcFine>0?inr(calcFine):'—'}</span></td>
+        <td>${statusBadge}</td>
+        <td>
+          ${!t.return_date&&t.status!=='Overdue'?`<button class="btn btn-success btn-sm" onclick="returnBook('${t.id}','${t.book_title.replace(/'/g,"\\'")}')">Return</button>`:''}
+          ${t.status==='Overdue'?`<button class="btn btn-pay btn-sm" onclick="openPaymentModal('${t.id}','${t.member_name.replace(/'/g,"\\'")}','${t.member_display_id}','${t.book_title.replace(/'/g,"\\'")}','${t.due_date}')">&#8377; Collect</button>`:''}
+          ${t.return_date?'—':''}
+        </td></tr>`;
+    }).join(''):`<tr><td colspan="9"><div class="empty"><p>No transactions found.</p></div></td></tr>`;
+  }catch(e){toast('Error loading transactions: '+e.message,false);}
+}
+
+// ─── FINE PAYMENTS PAGE ───────────────────────────────────
+async function renderPayments(){
+  try{
+    const {data:txns}=await api('GET','/api/transactions');
+    const overdue=txns.filter(t=>t.status==='Overdue');
+    const returned=txns.filter(t=>t.status==='Returned'&&(t.fine>0));
+    const banner=document.getElementById('overdue-payment-banner');
+    if(overdue.length>0){
+      const totalFine=overdue.reduce((s,t)=>s+daysOver(t.due_date)*0.5,0);
+      banner.innerHTML=`<div class="overdue-banner"><div class="ob-icon">&#9888;&#65039;</div><div class="ob-text"><strong>${overdue.length} overdue book${overdue.length!==1?'s':''}</strong> — Total pending fines: <strong>${inr(totalFine)}</strong></div></div>`;
+    }else{banner.innerHTML='';}
+    document.getElementById('payment-count').textContent=overdue.length+' pending';
+    document.getElementById('payment-tbody').innerHTML=overdue.length?overdue.map(t=>{
+      const days=daysOver(t.due_date);const fine=days*0.5;
+      return`<tr>
+        <td><strong style="font-size:13px;font-family:'Helvetica Neue',sans-serif">${t.member_name}</strong><br><span style="color:var(--info);font-size:11px;font-family:monospace">${t.member_display_id}</span></td>
+        <td style="font-size:13px;font-family:'Helvetica Neue',sans-serif">${t.book_title}</td>
+        <td style="font-size:13px;color:var(--danger)">${fmtDate(t.due_date)}</td>
+        <td style="text-align:center"><span class="badge badge-over">${days} day${days!==1?'s':''}</span></td>
+        <td><span class="fine-tag" style="font-size:14px">${inr(fine)}</span></td>
+        <td><span class="badge badge-over">Overdue</span></td>
+        <td><button class="btn btn-pay btn-sm" onclick="openPaymentModal('${t.id}','${t.member_name.replace(/'/g,"\\'")}','${t.member_display_id}','${t.book_title.replace(/'/g,"\\'")}','${t.due_date}')">&#8377; Collect Fine</button></td>
+      </tr>`;
+    }).join(''):`<tr><td colspan="7"><div class="empty"><p>&#127881; No overdue books! All fines cleared.</p></div></td></tr>`;
+    document.getElementById('paid-tbody').innerHTML=returned.length?returned.map(t=>`<tr>
+      <td style="font-size:13px;font-family:'Helvetica Neue',sans-serif"><strong>${t.member_name}</strong></td>
+      <td style="font-size:13px;font-family:'Helvetica Neue',sans-serif">${t.book_title}</td>
+      <td style="font-size:13px">${fmtDate(t.return_date)}</td>
+      <td><span style="color:var(--success);font-weight:700;font-family:'Helvetica Neue',sans-serif">${inr(t.fine)}</span></td>
+      <td><span class="badge badge-avail">Collected</span></td>
+    </tr>`).join(''):`<tr><td colspan="5"><div class="empty"><p>No fine collection history yet.</p></div></td></tr>`;
+  }catch(e){toast('Error loading payments: '+e.message,false);}
+}
+
+// ─── PAYMENT MODAL ────────────────────────────────────────
+function openPaymentModal(txnId,memberName,memberId,bookTitle,dueDate){
+  const days=daysOver(dueDate);const fine=days*0.5;
+  currentPayTxn={txnId,memberName,memberId,bookTitle,dueDate,days,fine};
+  document.getElementById('pay-member-name').textContent=memberName;
+  document.getElementById('pay-member-id').textContent=memberId;
+  document.getElementById('pay-book-title').textContent=bookTitle;
+  document.getElementById('pay-due-date').textContent=fmtDate(dueDate);
+  document.getElementById('pay-days-over').textContent=days+' day'+(days!==1?'s':'');
+  document.getElementById('pay-fine-amount').textContent=inr(fine);
+  document.getElementById('receipt-box').classList.remove('show');
+  document.getElementById('btn-collect-payment').style.display='inline-flex';
+  document.getElementById('btn-collect-payment').disabled=false;
+  document.getElementById('btn-collect-payment').innerHTML='\u20B9 Collect &amp; Return Book';
+  document.getElementById('pay-cancel-btn').textContent='Cancel';
+  selectPayMethod('cash');
+  openModal('modal-payment');
+}
+function selectPayMethod(method){
+  selectedPayMethod=method;
+  ['cash','upi','card'].forEach(m=>document.getElementById('pm-'+m).classList.toggle('selected',m===method));
+  document.getElementById('upi-field').style.display=method==='upi'?'block':'none';
+}
+async function collectPayment(){
+  if(!currentPayTxn)return;
+  const btn=document.getElementById('btn-collect-payment');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Processing\u2026';
+  try{
+    const {data:r}=await api('PUT','/api/transactions/'+currentPayTxn.txnId+'/return');
+    const receiptNo='RCP-'+Date.now().toString(36).toUpperCase();
+    const now=new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('receipt-details').innerHTML=
+      `<strong>Receipt No:</strong> ${receiptNo}<br>`+
+      `<strong>Member:</strong> ${currentPayTxn.memberName} (${currentPayTxn.memberId})<br>`+
+      `<strong>Book:</strong> ${currentPayTxn.bookTitle}<br>`+
+      `<strong>Fine Collected:</strong> ${inr(r.fine||currentPayTxn.fine)}<br>`+
+      `<strong>Payment Method:</strong> ${selectedPayMethod.charAt(0).toUpperCase()+selectedPayMethod.slice(1)}`+
+      (selectedPayMethod==='upi'&&document.getElementById('upi-txn-id').value?`<br><strong>UPI Ref:</strong> ${document.getElementById('upi-txn-id').value}`:'')+
+      `<br><strong>Date &amp; Time:</strong> ${now}<br>`+
+      `<strong>Processed by:</strong> Administrator`;
+    document.getElementById('receipt-box').classList.add('show');
+    btn.style.display='none';
+    document.getElementById('pay-cancel-btn').textContent='Close';
+    toast(`\u20B9${(r.fine||currentPayTxn.fine).toFixed(2)} collected from ${currentPayTxn.memberName}!`);
+    renderPayments();renderTransactions();renderDashboard();
+  }catch(e){
+    toast('Payment failed: '+e.message,false);
+    btn.disabled=false;btn.innerHTML='\u20B9 Collect &amp; Return Book';
+  }
+}
+
+// ─── BORROW / RETURN ──────────────────────────────────────
+async function populateBorrowSelects(preBook){
+  try{
+    const [{data:members},{data:books}]=await Promise.all([api('GET','/api/members'),api('GET','/api/books?status=Available')]);
+    document.getElementById('bw-member').innerHTML=members.map(m=>`<option value="${m.id}">${m.name} (${m.id})</option>`).join('');
+    document.getElementById('bw-book').innerHTML=books.length?books.map(b=>`<option value="${b.id}"${preBook==b.id?' selected':''}>${b.title} \u2014 ${b.author}</option>`).join(''):'<option disabled>No books available</option>';
+  }catch(e){toast('Error loading data: '+e.message,false);}
+}
+async function borrowBook(){
+  const memberId=document.getElementById('bw-member').value;
+  const bookId=document.getElementById('bw-book').value;
+  const days=document.getElementById('bw-days').value;
+  const err=document.getElementById('borrow-err');
+  if(!memberId||!bookId){err.style.display='block';err.textContent='Please select both member and book.';return;}
+  err.style.display='none';setLoading('btn-borrow',true);
+  try{
+    await api('POST','/api/transactions',{memberId,bookId:parseInt(bookId),days:parseInt(days)});
+    closeModal('modal-borrow');toast('Book issued successfully!');
+    renderTransactions();renderBooks();renderDashboard();
+  }catch(e){err.style.display='block';err.textContent=e.message;}
+  setLoading('btn-borrow',false);
+}
+async function returnBook(id,title){
+  if(!confirm(`Return "${title}"?`))return;
+  try{
+    const {data:r}=await api('PUT','/api/transactions/'+id+'/return');
+    toast(r.fine>0?`Returned. Fine collected: ${inr(r.fine)}`:'Book returned successfully!');
+    renderTransactions();renderBooks();renderDashboard();
+  }catch(e){toast(e.message,false);}
+}
+</script>
+</body>
+</html>
