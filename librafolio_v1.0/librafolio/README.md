@@ -1,4 +1,4 @@
-# 📚 LibraFlow — Library Management System
+# 📚 LibraFolio — Library Management System
 
 A full-stack Library Management System built with **Node.js + Express** backend and **SQLite** database.
 
@@ -7,7 +7,7 @@ A full-stack Library Management System built with **Node.js + Express** backend 
 ## 🗂 Project Structure
 
 ```
-libraflow/
+librafolio/
 ├── server.js              # Express entry point
 ├── database.js            # SQLite setup + seed data
 ├── package.json
